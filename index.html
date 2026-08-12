@@ -3,97 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scopus Data Visualization (Auto Load)</title>
-    <!-- โหลดไลบรารี Chart.js สำหรับวาดกราฟ -->
+    <title>Scopus Data Dashboard</title>
+    <!-- โหลดฟอนต์ Google Fonts เพื่อความสวยงาม -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- โหลดไลบรารี Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --ai-color: #3b82f6; /* สีฟ้าสำหรับ AI */
+            --math-color: #8b5cf6; /* สีม่วงสำหรับ Math */
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px 60px;
         }
-        h1 {
+
+        .header {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-        }
-        .file-container {
-            background: #fff;
             margin-bottom: 40px;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .file-title {
-            color: #2980b9;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 10px;
-            margin-top: 0;
-            font-size: 1.2em;
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+            color: #111827;
+            font-weight: 600;
         }
-        .charts-wrapper {
+
+        .header p {
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .section-container {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin: 0 auto 40px auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 30px;
+            color: white;
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 20px;
+            align-items: center;
         }
+
+        .section-header.ai {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .section-header.math {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
         .chart-box {
-            flex: 1 1 400px;
-            max-width: 500px;
             background: #fafafa;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        /* สำหรับหน้าจอขนาดเล็ก (มือถือ) */
+        @media (max-width: 900px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
-    <h1>รายงานข้อมูล Scopus (แสดงผลอัตโนมัติ)</h1>
-    
-    <!-- พื้นที่แสดงข้อมูลไฟล์ที่ 1 -->
-    <div class="file-container">
-        <h2 class="file-title">ไฟล์: scopus_export_Aug 12-2026_563f02c4-9409-4e98-9a57-285d8c40cad2.csv</h2>
-        <div class="charts-wrapper">
+    <div class="header">
+        <h1>Scopus Research Dashboard</h1>
+        <p>รายงานสรุปข้อมูลการตีพิมพ์แยกตามหมวดหมู่</p>
+    </div>
+
+    <!-- ส่วนที่ 1: Artificial Intelligence -->
+    <div class="section-container">
+        <div class="section-header ai">
+            <h2>Artificial Intelligence</h2>
+        </div>
+        <div class="charts-grid">
             <div class="chart-box">
-                <canvas id="chart-doc-type-1"></canvas>
+                <canvas id="ai-doc-type"></canvas>
             </div>
             <div class="chart-box">
-                <canvas id="chart-source-1"></canvas>
+                <canvas id="ai-source"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- พื้นที่แสดงข้อมูลไฟล์ที่ 2 -->
-    <div class="file-container">
-        <h2 class="file-title">ไฟล์: scopus_export_Aug 12-2026_ab8f190a-cf23-4c15-b130-93b44386908f.csv</h2>
-        <div class="charts-wrapper">
+    <!-- ส่วนที่ 2: Computational Theory AND Mathematics -->
+    <div class="section-container">
+        <div class="section-header math">
+            <h2>Computational Theory AND Mathematics</h2>
+        </div>
+        <div class="charts-grid">
             <div class="chart-box">
-                <canvas id="chart-doc-type-2"></canvas>
+                <canvas id="math-doc-type"></canvas>
             </div>
             <div class="chart-box">
-                <canvas id="chart-source-2"></canvas>
+                <canvas id="math-source"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // ข้อมูลที่ถูกดึงและสรุปผลมาจากไฟล์ CSV ทั้ง 2 ไฟล์
+        // ข้อมูลที่ถูกดึงและสรุปผลมาจากไฟล์ทั้ง 2 ไฟล์
         const scopusData = {
-            file1: {
-                docTypes: { "Article": 206, "Conference paper": 80, "Review": 11, "Conference review": 2, "Erratum": 1 },
-                topSources: { 
-                    "Leibniz Int. Proc. in Informatics": 17, 
-                    "Nonlinear Dynamics": 9, 
-                    "Mathematics": 5, 
-                    "Electronics (Switzerland)": 4, 
-                    "Chaos, Solitons and Fractals": 4 
-                }
-            },
-            file2: {
+            ai: {
                 docTypes: { "Article": 261, "Conference paper": 39 },
                 topSources: { 
                     "ShodhKosh: Journal of Visual...": 29, 
@@ -102,31 +155,55 @@
                     "ICMHI 2025 - 9th Int. Conf. on Medical...": 15, 
                     "Journal of Medical Artificial Intelligence": 14 
                 }
+            },
+            math: {
+                docTypes: { "Article": 206, "Conference paper": 80, "Review": 11, "Conference review": 2, "Erratum": 1 },
+                topSources: { 
+                    "Leibniz Int. Proc. in Informatics": 17, 
+                    "Nonlinear Dynamics": 9, 
+                    "Mathematics": 5, 
+                    "Electronics (Switzerland)": 4, 
+                    "Chaos, Solitons and Fractals": 4 
+                }
             }
         };
 
-        // ฟังก์ชันสำหรับสร้างกราฟวงกลม (Pie Chart)
-        function createPieChart(canvasId, dataObj, titleText) {
+        // ตั้งค่าฟอนต์เริ่มต้นสำหรับ Chart.js
+        Chart.defaults.font.family = "'Prompt', sans-serif";
+        Chart.defaults.color = '#4b5563';
+
+        // ฟังก์ชันสร้างกราฟโดนัท (Doughnut Chart) แทน Pie Chart เพื่อความทันสมัย
+        function createDoughnutChart(canvasId, dataObj, titleText, colorPalette) {
             new Chart(document.getElementById(canvasId), {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
                     labels: Object.keys(dataObj),
                     datasets: [{
                         data: Object.values(dataObj),
-                        backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#9b59b6']
+                        backgroundColor: colorPalette,
+                        borderWidth: 2,
+                        hoverOffset: 4
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: titleText, font: { size: 16 } }
-                    }
+                        title: { 
+                            display: true, 
+                            text: titleText, 
+                            font: { size: 16, weight: '600' },
+                            padding: { bottom: 20 }
+                        },
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '60%' // ทำให้ตรงกลางกลวง (Doughnut)
                 }
             });
         }
 
-        // ฟังก์ชันสำหรับสร้างกราฟแท่ง (Bar Chart)
-        function createBarChart(canvasId, dataObj, titleText) {
+        // ฟังก์ชันสร้างกราฟแท่ง (Bar Chart)
+        function createBarChart(canvasId, dataObj, titleText, barColor) {
             new Chart(document.getElementById(canvasId), {
                 type: 'bar',
                 data: {
@@ -134,17 +211,30 @@
                     datasets: [{
                         label: 'จำนวนบทความ (ฉบับ)',
                         data: Object.values(dataObj),
-                        backgroundColor: '#3498db'
+                        backgroundColor: barColor,
+                        borderRadius: 6, // ขอบกราฟมน
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: titleText, font: { size: 16 } },
+                        title: { 
+                            display: true, 
+                            text: titleText, 
+                            font: { size: 16, weight: '600' },
+                            padding: { bottom: 20 }
+                        },
                         legend: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: '#e5e7eb' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
                     }
                 }
             });
@@ -152,13 +242,18 @@
 
         // วาดกราฟเมื่อหน้าเว็บโหลดเสร็จ
         window.onload = function() {
-            // กราฟไฟล์ที่ 1
-            createPieChart('chart-doc-type-1', scopusData.file1.docTypes, 'สัดส่วนประเภทเอกสาร (Document Type)');
-            createBarChart('chart-source-1', scopusData.file1.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)');
+            // ชุดสีสำหรับ AI (โทนเย็น/ฟ้า-เขียว)
+            const aiColors = ['#3b82f6', '#10b981', '#06b6d4', '#6366f1', '#14b8a6'];
+            // ชุดสีสำหรับ Math (โทนอุ่น/ม่วง-ส้ม)
+            const mathColors = ['#8b5cf6', '#f59e0b', '#ec4899', '#f43f5e', '#84cc16'];
 
-            // กราฟไฟล์ที่ 2
-            createPieChart('chart-doc-type-2', scopusData.file2.docTypes, 'สัดส่วนประเภทเอกสาร (Document Type)');
-            createBarChart('chart-source-2', scopusData.file2.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)');
+            // 1. หมวดหมู่ Artificial Intelligence
+            createDoughnutChart('ai-doc-type', scopusData.ai.docTypes, 'สัดส่วนประเภทเอกสาร', aiColors);
+            createBarChart('ai-source', scopusData.ai.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)', '#3b82f6');
+
+            // 2. หมวดหมู่ Computational Theory AND Mathematics
+            createDoughnutChart('math-doc-type', scopusData.math.docTypes, 'สัดส่วนประเภทเอกสาร', mathColors);
+            createBarChart('math-source', scopusData.math.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)', '#8b5cf6');
         };
     </script>
 </body>
