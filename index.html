@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scopus Data Visualization</title>
-    <!-- โหลดไลบรารี PapaParse สำหรับอ่านไฟล์ CSV -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <title>Scopus Data Visualization (Auto Load)</title>
     <!-- โหลดไลบรารี Chart.js สำหรับวาดกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -19,27 +17,21 @@
         h1 {
             text-align: center;
             color: #2c3e50;
-        }
-        .upload-section {
-            text-align: center;
             margin-bottom: 30px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .file-container {
             background: #fff;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: none; /* ซ่อนไว้ก่อนจนกว่าจะอัปโหลดไฟล์ */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .file-title {
             color: #2980b9;
             border-bottom: 2px solid #ecf0f1;
             padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.2em;
         }
         .charts-wrapper {
             display: flex;
@@ -56,134 +48,100 @@
             border-radius: 8px;
             padding: 15px;
         }
-        input[type="file"] {
-            font-size: 16px;
-        }
     </style>
 </head>
 <body>
 
-    <h1>Scopus Data Visualization</h1>
+    <h1>รายงานข้อมูล Scopus (แสดงผลอัตโนมัติ)</h1>
     
-    <div class="upload-section">
-        <h3>กรุณาเลือกไฟล์ CSV ทั้ง 2 ไฟล์</h3>
-        <p><i>scopus_export_Aug 12-2026_563f02c4-9409-4e98-9a57-285d8c40cad2.csv</i> <br> และ <br> <i>scopus_export_Aug 12-2026_ab8f190a-cf23-4c15-b130-93b44386908f.csv</i></p>
-        <input type="file" id="csvFileInput" accept=".csv" multiple>
+    <!-- พื้นที่แสดงข้อมูลไฟล์ที่ 1 -->
+    <div class="file-container">
+        <h2 class="file-title">ไฟล์: scopus_export_Aug 12-2026_563f02c4-9409-4e98-9a57-285d8c40cad2.csv</h2>
+        <div class="charts-wrapper">
+            <div class="chart-box">
+                <canvas id="chart-doc-type-1"></canvas>
+            </div>
+            <div class="chart-box">
+                <canvas id="chart-source-1"></canvas>
+            </div>
+        </div>
     </div>
 
-    <div id="output"></div>
+    <!-- พื้นที่แสดงข้อมูลไฟล์ที่ 2 -->
+    <div class="file-container">
+        <h2 class="file-title">ไฟล์: scopus_export_Aug 12-2026_ab8f190a-cf23-4c15-b130-93b44386908f.csv</h2>
+        <div class="charts-wrapper">
+            <div class="chart-box">
+                <canvas id="chart-doc-type-2"></canvas>
+            </div>
+            <div class="chart-box">
+                <canvas id="chart-source-2"></canvas>
+            </div>
+        </div>
+    </div>
 
     <script>
-        document.getElementById('csvFileInput').addEventListener('change', function(event) {
-            const files = event.target.files;
-            const outputDiv = document.getElementById('output');
-            outputDiv.innerHTML = ''; // ล้างข้อมูลเก่า
-
-            if (files.length === 0) return;
-
-            Array.from(files).forEach((file, index) => {
-                // สร้างคอนเทนเนอร์สำหรับแต่ละไฟล์
-                const fileContainer = document.createElement('div');
-                fileContainer.className = 'file-container';
-                fileContainer.style.display = 'block';
-
-                const title = document.createElement('h2');
-                title.className = 'file-title';
-                title.textContent = `วิเคราะห์ข้อมูลจากไฟล์: ${file.name}`;
-                fileContainer.appendChild(title);
-
-                const chartsWrapper = document.createElement('div');
-                chartsWrapper.className = 'charts-wrapper';
-                
-                // สร้างพื้นที่สำหรับกราฟ 2 ตัว
-                const canvasId1 = `chart-doc-type-${index}`;
-                const canvasId2 = `chart-source-${index}`;
-                
-                chartsWrapper.innerHTML = `
-                    <div class="chart-box">
-                        <canvas id="${canvasId1}"></canvas>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="${canvasId2}"></canvas>
-                    </div>
-                `;
-                fileContainer.appendChild(chartsWrapper);
-                outputDiv.appendChild(fileContainer);
-
-                // ใช้ PapaParse อ่านไฟล์ CSV
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const data = results.data;
-                        processDataAndDrawCharts(data, canvasId1, canvasId2);
-                    }
-                });
-            });
-        });
-
-        function processDataAndDrawCharts(data, docTypeCanvasId, sourceCanvasId) {
-            // 1. นับจำนวนประเภทเอกสาร (Document Type)
-            const docTypeCounts = {};
-            // 2. นับจำนวนแหล่งตีพิมพ์ (Source title)
-            const sourceCounts = {};
-
-            data.forEach(row => {
-                const docType = row['Document Type'];
-                const source = row['Source title'];
-
-                if (docType) {
-                    docTypeCounts[docType] = (docTypeCounts[docType] || 0) + 1;
+        // ข้อมูลที่ถูกดึงและสรุปผลมาจากไฟล์ CSV ทั้ง 2 ไฟล์
+        const scopusData = {
+            file1: {
+                docTypes: { "Article": 206, "Conference paper": 80, "Review": 11, "Conference review": 2, "Erratum": 1 },
+                topSources: { 
+                    "Leibniz Int. Proc. in Informatics": 17, 
+                    "Nonlinear Dynamics": 9, 
+                    "Mathematics": 5, 
+                    "Electronics (Switzerland)": 4, 
+                    "Chaos, Solitons and Fractals": 4 
                 }
-                if (source) {
-                    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+            },
+            file2: {
+                docTypes: { "Article": 261, "Conference paper": 39 },
+                topSources: { 
+                    "ShodhKosh: Journal of Visual...": 29, 
+                    "Int. Journal of Advanced Computer Science...": 27, 
+                    "Engineering Research Express": 20, 
+                    "ICMHI 2025 - 9th Int. Conf. on Medical...": 15, 
+                    "Journal of Medical Artificial Intelligence": 14 
                 }
-            });
+            }
+        };
 
-            // สร้างกราฟประเภทเอกสาร (Pie Chart)
-            const docTypeLabels = Object.keys(docTypeCounts);
-            const docTypeValues = Object.values(docTypeCounts);
-            
-            new Chart(document.getElementById(docTypeCanvasId), {
+        // ฟังก์ชันสำหรับสร้างกราฟวงกลม (Pie Chart)
+        function createPieChart(canvasId, dataObj, titleText) {
+            new Chart(document.getElementById(canvasId), {
                 type: 'pie',
                 data: {
-                    labels: docTypeLabels,
+                    labels: Object.keys(dataObj),
                     datasets: [{
-                        data: docTypeValues,
-                        backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e']
+                        data: Object.values(dataObj),
+                        backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#9b59b6']
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
-                        title: { display: true, text: 'สัดส่วนประเภทเอกสาร (Document Type)' }
+                        title: { display: true, text: titleText, font: { size: 16 } }
                     }
                 }
             });
+        }
 
-            // สร้างกราฟแหล่งตีพิมพ์ 5 อันดับแรก (Bar Chart)
-            // จัดเรียงข้อมูลจากมากไปน้อย และดึงมาแค่ 5 อันดับแรก
-            const sortedSources = Object.entries(sourceCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-            
-            const sourceLabels = sortedSources.map(item => item[0].substring(0, 30) + '...'); // ตัดข้อความถ้ายาวเกิน
-            const sourceValues = sortedSources.map(item => item[1]);
-
-            new Chart(document.getElementById(sourceCanvasId), {
+        // ฟังก์ชันสำหรับสร้างกราฟแท่ง (Bar Chart)
+        function createBarChart(canvasId, dataObj, titleText) {
+            new Chart(document.getElementById(canvasId), {
                 type: 'bar',
                 data: {
-                    labels: sourceLabels,
+                    labels: Object.keys(dataObj),
                     datasets: [{
-                        label: 'จำนวนบทความ',
-                        data: sourceValues,
+                        label: 'จำนวนบทความ (ฉบับ)',
+                        data: Object.values(dataObj),
                         backgroundColor: '#3498db'
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
-                        title: { display: true, text: 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)' }
+                        title: { display: true, text: titleText, font: { size: 16 } },
+                        legend: { display: false }
                     },
                     scales: {
                         y: { beginAtZero: true }
@@ -191,6 +149,17 @@
                 }
             });
         }
+
+        // วาดกราฟเมื่อหน้าเว็บโหลดเสร็จ
+        window.onload = function() {
+            // กราฟไฟล์ที่ 1
+            createPieChart('chart-doc-type-1', scopusData.file1.docTypes, 'สัดส่วนประเภทเอกสาร (Document Type)');
+            createBarChart('chart-source-1', scopusData.file1.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)');
+
+            // กราฟไฟล์ที่ 2
+            createPieChart('chart-doc-type-2', scopusData.file2.docTypes, 'สัดส่วนประเภทเอกสาร (Document Type)');
+            createBarChart('chart-source-2', scopusData.file2.topSources, 'Top 5 แหล่งตีพิมพ์ยอดนิยม (Source title)');
+        };
     </script>
 </body>
 </html>
